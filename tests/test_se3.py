@@ -1,6 +1,6 @@
 from unittest import TestCase
 from auxiliaryOperations import equalWithError
-from Lie import *
+from pySophus import *
 
 
 class TestSe3(TestCase):

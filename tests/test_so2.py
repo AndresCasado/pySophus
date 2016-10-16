@@ -1,5 +1,5 @@
 from unittest import TestCase
-from Lie import *
+from pySophus import *
 import numpy as np
 from tests.auxiliaryOperations import equalWithError
 from auxiliaryOperations import test_expLog, testvalues
