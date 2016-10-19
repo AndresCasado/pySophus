@@ -7,32 +7,126 @@ from __future__ import division
 import numpy as np
 
 
-class Algebra:
-    def matrix(self):
-        pass
+def specialDotMap(matrix, point_or_points):
+    """Special matrix multiplication method used with transformation matrices (Rotation*point + translation) and points
+    using function mapping to save some memory
+    :param matrix: ndarray (n x n matrix)
+    :param point_or_points: ndarray (n-1 vector)
+    :return: transformed point/s
+    :rtype: ndarray
+    """
+    dim = len(point_or_points)
+    R = matrix[0:dim, 0:dim]
+    t = matrix[0:dim, dim]
 
-    def vector(self):
-        pass
+    result = R.dot(point_or_points)
+    if point_or_points.ndim == 2:
+        result = np.array(map(lambda a: a + t, result.T))
+        return result.T
+    else:
+        return result + t
 
-    def exp(self):
-        pass
 
+def specialDotMatrix(matrix, point_or_points):
+    """Special matrix multiplication method used with transformation matrices (Rotation*point + translation) and points
+    using only matrix multiplications
+    :param matrix: ndarray (n x n matrix)
+    :param point_or_points: ndarray (n-1 vector)
+    :return: transformed point/s
+    :rtype: ndarray
+    """
+    if point_or_points.ndim == 1:
+        point_or_points = np.append(point_or_points, 1)
+        point = np.dot(matrix, point_or_points)
+        return point[:len(point) - 1]
+    elif point_or_points.ndim == 2:
+        point_or_points = np.append(point_or_points.T, np.ones((1, len(point_or_points))), axis=0)
+        point_or_points = np.dot(matrix, point_or_points)
+        result = point_or_points[:len(point_or_points) - 1, :]
+        return result.T
+
+
+# TODO documentation
+
+class Algebra(object):
     def __add__(self, other):
-        pass
+        """Returns the algebra element for the equivalent rotation/transformation as applying the given ones one after the other
+        :param other: element to add this element to
+        :type other: algebra
+        :return: equivalent algebra element
+        :rtype: algebra
+        """
+        if type(other) == type(self):
+            R1 = self.exp()
+            R2 = other.exp()
+            R = R1 * R2
+            return R.log()
+        elif type(other) == np.ndarray:
+            return type(self)(self.w + other)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
+
+    def __sub__(self, other):
+        return self + (- other)
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        return - (self.__sub__(other))
+
+    def __neg__(self):
+
+        """
+        :return:
+        """
+        return type(self)(vector=-self.vector())
 
 
-class Group:
-    def matrix(self):
-        pass
+class Group(object):
+    def __init__(self, matrix):
+        self.M = matrix
 
-    def log(self):
-        pass
+    def __div__(self, other):
+        return self * (- other)
 
+    def __neg__(self):
+        return type(self)(np.linalg.inv(self.M))
+
+
+class RotationGroup(Group):
     def __mul__(self, other):
-        pass
+        """Returns the group element for the equivalent rotation/transformation as applying the given ones one after the other
+        :param other: element to multiply this object by
+        :type other: group
+        :return: equivalent group element
+        :rtype: group
+        """
+        if type(other) == type(self):
+            return type(self)(self.M.dot(other.matrix()))
+        elif type(other) == np.ndarray:
+            return self.M.dot(other)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
 
 
-class SO2(Group):
+class TransformationGroup(Group):
+    def __mul__(self, other):
+        """Returns the group element for the equivalent rotation/transformation as applying the given ones one after the other
+        :param other: element to multiply this object by
+        :type other: group
+        :return: equivalent group element
+        :rtype: group
+        """
+        if type(other) == type(self):
+            return type(self)(self.M.dot(other.matrix()))
+        elif type(other) == np.ndarray:
+            return specialDotMatrix(self.M, other)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
+
+
+class SO2(RotationGroup):
     """2D rotation Lie group"""
 
     def __init__(self, matrix):
@@ -41,15 +135,6 @@ class SO2(Group):
         :type matrix: numpy.ndarray
         """
         self.M = matrix
-
-    def __mul__(self, other):
-        """Returns the group element for the equivalent rotation as applying the given ones one after the other
-        :param other: element to multiply this object by
-        :type other: SO2
-        :return: equivalent group element
-        :rtype: SO2
-        """
-        return SO2(self.M.dot(other.matrix()))
 
     def matrix(self):
         """
@@ -81,16 +166,16 @@ class so2(Algebra):
         :raises TypeError, if the needed argument (theta, matrix or vector) is not given
         """
         if "theta" in kwargs:
-            self.angle = kwargs["theta"]
+            self.w = kwargs["theta"]
         elif "matrix" in kwargs:
-            self.angle = kwargs["matrix"][1, 0]
+            self.w = kwargs["matrix"][1, 0]
         elif "vector" in kwargs:
-            self.angle = kwargs["vector"][0]
+            self.w = kwargs["vector"][0]
         else:
             raise TypeError("Argument must be theta, matrix or vector")
 
-        if self.angle >= np.pi or self.angle <= -np.pi:
-            self.angle = np.arctan2(np.sin(self.angle), np.cos(self.angle))
+        if self.w >= np.pi or self.w <= -np.pi:
+            self.w = np.arctan2(np.sin(self.w), np.cos(self.w))
 
     def __add__(self, other):
         """Returns the algebra element for the equivalent rotation as applying the given ones one after the other
@@ -99,17 +184,22 @@ class so2(Algebra):
         :return: equivalent algebra element
         :rtype: so2
         """
-        R1 = self.exp()
-        R2 = other.exp()
-        R = R1 * R2
-        return R.log()
+        if isinstance(other, so2):
+            R1 = self.exp()
+            R2 = other.exp()
+            R = R1 * R2
+            return R.log()
+        elif isinstance(other, float) or isinstance(other, int) or isinstance(other, np.ndarray):
+            return so2(self.w + other)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
 
     def exp(self):
         """
         :return: group element associated with this algebra element
         :rtype: SO2
         """
-        theta = self.angle
+        theta = self.w
         cs = np.cos(theta)
         sn = np.sin(theta)
         R = np.matrix([[cs, -sn],
@@ -121,25 +211,25 @@ class so2(Algebra):
         :return: this algebra element represented as skew matrix (2x2)
         :rtype: ndarray
         """
-        return self.angle * so2.G
+        return self.w * so2.G
 
     def vector(self):
         """
         :return: this algebra element represented as vector (1x1)
         :rtype: ndarray
         """
-        return np.array([self.angle])
+        return np.array([self.w])
 
     def theta(self):
         """
         :return: the rotation in radians counterclock-wise
         :rtype: float
         """
-        return self.angle
+        return self.w
 
 
 # TODO SE2/se2: define if A*B/a+b should be A(B(point)) or B(A(point))
-class SE2(Group):
+class SE2(TransformationGroup):
     """2D transformation Lie group"""
 
     def __init__(self, matrix):
@@ -173,15 +263,6 @@ class SE2(Group):
         Vt = V1.dot(t)
         return se2(vector=np.array([theta, Vt[0, 0], Vt[0, 1]]))
 
-    def __mul__(self, other):
-        """Returns the group element for the equivalent transformation as applying the given ones one after the other
-        :param other: element to multiply this object by
-        :type other: SE2
-        :return: equivalent group element
-        :rtype: SE2
-        """
-        return SE2(self.M.dot(other.matrix()))
-
 
 class se2(Algebra):
     """2D transformation Lie algebra"""
@@ -213,17 +294,6 @@ class se2(Algebra):
         if self.w[0] >= np.pi or self.w[0] <= -np.pi:
             self.w[0] = np.arctan2(np.sin(self.w[0]), np.cos(self.w[0]))
 
-    def __add__(self, other):
-        """Returns the algebra element for the equivalent transformation as applying the given ones one after the other
-        :param other: element to add this element to
-        :type other: se2
-        :return: equivalent algebra element
-        :rtype: se2
-        """
-        R1 = self.exp()
-        R2 = other.exp()
-        R = R1 * R2
-        return R.log()
 
     def exp(self):
         """
@@ -262,7 +332,7 @@ class se2(Algebra):
         return self.w
 
 
-class SO3(Group):
+class SO3(RotationGroup):
     """3D rotation Lie group"""
 
     def __init__(self, matrix):
@@ -305,15 +375,6 @@ class SO3(Group):
         """
         return self.M
 
-    def __mul__(self, other):
-        """Returns the group element for the equivalent rotation as applying the given ones one after the other
-        :param other: element to multiply this object by
-        :type other: SO3
-        :return: equivalent group element
-        :rtype: SO3
-        """
-        return SO3(self.M.dot(other.matrix()))
-
 
 class so3(Algebra):
     """3D rotation Lie algebra"""
@@ -343,18 +404,6 @@ class so3(Algebra):
             self.w[2] = m[1, 0]
         else:
             raise TypeError("Argument must be matrix or vector")
-
-    def __add__(self, other):
-        """Returns the algebra element for the equivalent rotation as applying the given ones one after the other
-        :param other: element to add this element to
-        :type other: so3
-        :return: equivalent algebra element
-        :rtype: so3
-        """
-        R1 = self.exp()
-        R2 = other.exp()
-        R = R1 * R2
-        return R.log()
 
     def magnitude(self):
         """Given the vector w=(wx,wy,wz) returns its norm, which is how many radians this rotation makes around the normalized vector
@@ -393,7 +442,7 @@ class so3(Algebra):
         return so3.G1 * self.w[0] + so3.G2 * self.w[1] + so3.G3 * self.w[2]
 
 
-class SE3(Group):
+class SE3(TransformationGroup):
     """3D transformation Lie group"""
 
     def __init__(self, matrix):
@@ -402,15 +451,6 @@ class SE3(Group):
         :type matrix: numpy.ndarray
         """
         self.M = matrix
-
-    def __mul__(self, other):
-        """Returns the group element for the equivalent transformation as applying the given ones one after the other
-        :param other: element to multiply this object by
-        :type other: SE3
-        :return: equivalent group element
-        :rtype: SE3
-        """
-        return SE3(self.M.dot(other.matrix()))
 
     def matrix(self):
         """
@@ -432,7 +472,7 @@ class SE3(Group):
         theta = w.magnitude()
         wx = w.matrix()
         wx2 = wx.dot(wx)
-        a = (1 / theta**2) * (1 - (theta * np.sin(theta)) / (2 * (1 - np.cos(theta)))) if theta != 0 else 1 / 12
+        a = (1 / theta ** 2) * (1 - (theta * np.sin(theta)) / (2 * (1 - np.cos(theta)))) if theta != 0 else 1 / 12
         V = I - 1 / 2.0 * wx + a * wx2
 
         v = V.dot(t)
@@ -489,18 +529,6 @@ class se3(Algebra):
             self.w[3:6] = m[0:3, 3]
         else:
             raise TypeError("Argument must be matrix or vector")
-
-    def __add__(self, other):
-        """Returns the algebra element for the equivalent transformation as applying the given ones one after the other
-        :param other: element to add this element to
-        :type other: se3
-        :return: equivalent algebra element
-        :rtype: se3
-        """
-        R1 = self.exp()
-        R2 = other.exp()
-        R = R1 * R2
-        return R.log()
 
     def vector(self):
         """
