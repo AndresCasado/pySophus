@@ -66,6 +66,18 @@ class Algebra(object):
         else:
             raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
 
+    def __mul__(self, other):
+        if type(other) == int or type(other) == float:
+            return type(self)(vector=self.vector() * other)
+        else:
+            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
+
+    def __div__(self, other):
+        return self.__mul__(1 / other)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
     def __sub__(self, other):
         return self + (- other)
 
@@ -107,7 +119,7 @@ class RotationGroup(Group):
         elif type(other) == np.ndarray:
             return self.M.dot(other)
         else:
-            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
 
 
 class TransformationGroup(Group):
@@ -123,7 +135,7 @@ class TransformationGroup(Group):
         elif type(other) == np.ndarray:
             return specialDotMatrix(self.M, other)
         else:
-            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
 
 
 class SO2(RotationGroup):
@@ -293,7 +305,6 @@ class se2(Algebra):
 
         if self.w[0] >= np.pi or self.w[0] <= -np.pi:
             self.w[0] = np.arctan2(np.sin(self.w[0]), np.cos(self.w[0]))
-
 
     def exp(self):
         """
