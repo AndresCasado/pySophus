@@ -97,7 +97,7 @@ class Algebra(object):
 
 class Group(object):
     def __init__(self, matrix):
-        self.M = matrix
+        self.M = np.array(matrix)
 
     def __div__(self, other):
         return self * (- other)
@@ -140,13 +140,6 @@ class TransformationGroup(Group):
 
 class SO2(RotationGroup):
     """2D rotation Lie group"""
-
-    def __init__(self, matrix):
-        """Group element constructor
-        :param matrix: 2D rotation matrix (2x2)
-        :type matrix: numpy.ndarray
-        """
-        self.M = matrix
 
     def matrix(self):
         """
@@ -240,16 +233,8 @@ class so2(Algebra):
         return self.w
 
 
-# TODO SE2/se2: define if A*B/a+b should be A(B(point)) or B(A(point))
 class SE2(TransformationGroup):
     """2D transformation Lie group"""
-
-    def __init__(self, matrix):
-        """Group element constructor
-        :param matrix: 2D transformation matrix (3x3)
-        :type matrix: numpy.ndarray
-        """
-        self.M = matrix
 
     def matrix(self):
         """
@@ -346,13 +331,6 @@ class se2(Algebra):
 class SO3(RotationGroup):
     """3D rotation Lie group"""
 
-    def __init__(self, matrix):
-        """Group element constructor
-        :param matrix: 3D rotation matrix (3x3)
-        :type matrix: numpy.ndarray
-        """
-        self.M = matrix
-
     def log(self):
         """
         :return: algebra element associated with this group element
@@ -406,7 +384,7 @@ class so3(Algebra):
         :raises TypeError, if the needed argument (matrix or vector) is not given
         """
         if "vector" in kwargs:
-            self.w = kwargs["vector"]
+            self.w = np.array(kwargs["vector"])
         elif "matrix" in kwargs:
             m = kwargs["matrix"]
             self.w = np.array([0, 0, 0])
@@ -455,13 +433,6 @@ class so3(Algebra):
 
 class SE3(TransformationGroup):
     """3D transformation Lie group"""
-
-    def __init__(self, matrix):
-        """Group element constructor
-        :param matrix: 3D transformation matrix (4x4)
-        :type matrix: numpy.ndarray
-        """
-        self.M = matrix
 
     def matrix(self):
         """
