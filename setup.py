@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='pySophus',
-      version="18:56 19-10-2016",
+      version="20161109 20-22",
       description='Lie algebra and group module for 2/3D transformations',
       author='Andres Casado & Francisco Dominguez',
       author_email='andres.casado.94@gmail.com',
