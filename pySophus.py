@@ -232,6 +232,9 @@ class so2(Algebra):
         """
         return self.w
 
+    def generators(self):
+        return self.G
+
 
 class SE2(TransformationGroup):
     """2D transformation Lie group"""
@@ -326,6 +329,9 @@ class se2(Algebra):
         :rtype: ndarray
         """
         return self.w
+
+    def generators(self):
+        return np.array([self.G1, self.G2, self.G3])
 
 
 class SO3(RotationGroup):
@@ -429,6 +435,9 @@ class so3(Algebra):
         :rtype: ndarray
         """
         return so3.G1 * self.w[0] + so3.G2 * self.w[1] + so3.G3 * self.w[2]
+
+    def generators(self):
+        return np.array([self.G1, self.G2, self.G3])
 
 
 class SE3(TransformationGroup):
@@ -551,6 +560,9 @@ class se3(Algebra):
         T[0:3, 0:3] = R
         T[0:3, 3] = t
         return SE3(T)
+
+    def generators(self):
+        return np.array([self.G1, self.G2, self.G3, self.G4, self.G5, self.G6])
 
     def oldV(self):
         # TODO outdated?
