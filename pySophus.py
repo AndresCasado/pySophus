@@ -51,26 +51,23 @@ def specialDotMatrix(matrix, point_or_points):
 class Algebra(object):
     def __add__(self, other):
         """Returns the algebra element for the equivalent rotation/transformation as applying the given ones one after the other
-        :param other: element to add this element to
+        :param other: element to add to this element
         :type other: algebra
         :return: equivalent algebra element
         :rtype: algebra
         """
         if type(other) == type(self):
-            R1 = self.exp()
-            R2 = other.exp()
-            R = R1 * R2
-            return R.log()
+            return type(self)(vector=self.vector() + other.vector())
         elif type(other) == np.ndarray:
-            return type(self)(self.w + other)
+            return type(self)(vector=self.vector() + other)
         else:
-            raise TypeError("unsupported operand type(s) for +: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for +: '" + str(self.__class__) + "' and '" + str(other.__class__) + "'")
 
     def __mul__(self, other):
         if type(other) == int or type(other) == float:
             return type(self)(vector=self.vector() * other)
         else:
-            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for *: '" + str(self.__class__) + "' and '" + str(other.__class__) + "'")
 
     def __div__(self, other):
         return self.__mul__(1 / other)
@@ -94,6 +91,9 @@ class Algebra(object):
         """
         return type(self)(vector=-self.vector())
 
+    def vector(self):
+        raise NotImplementedError()
+
 
 class Group(object):
     def __init__(self, matrix):
@@ -115,7 +115,7 @@ class RotationGroup(Group):
         :rtype: group
         """
         if type(other) == type(self):
-            return type(self)(self.M.dot(other.matrix()))
+            return type(self)(matrix=self.M.dot(other.matrix()))
         elif type(other) == np.ndarray:
             return self.M.dot(other)
         else:
@@ -348,7 +348,7 @@ class SO3(RotationGroup):
             return so3(vector=np.array([0, 0, 0]))
         elif np.abs(np.trace(self.M) + 1) < error:
             # case theta == pi
-            if self.M[0, 0] > 0:
+            if self.M[0, 0] > error:
                 w = 1 / np.sqrt(2 * (1 + self.M[0, 0])) * np.array([1 + self.M[0, 0], self.M[1, 0], self.M[2, 0]])  # wx
             elif self.M[1, 1] > error:
                 w = 1 / np.sqrt(2 * (1 + self.M[1, 1])) * np.array([self.M[0, 1], 1 + self.M[1, 1], self.M[2, 1]])  # wy
@@ -418,7 +418,7 @@ class so3(Algebra):
         sn = np.sin(theta)
         I = np.eye(3)
         a = (sn / theta) if theta != 0 else 1
-        b = ((1 - cs) / theta ** 2) if theta != 0 else 1 / 2.0
+        b = ((1 - cs) / (theta ** 2)) if theta != 0 else 1 / 2.0
         R = I + a * wx + b * wx.dot(wx)
         return SO3(R)
 
