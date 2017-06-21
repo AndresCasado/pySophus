@@ -21,7 +21,7 @@ def specialDotMap(matrix, point_or_points):
 
     result = R.dot(point_or_points)
     if point_or_points.ndim == 2:
-        result = np.array(map(lambda a: a + t, result.T))
+        result = np.array([a + t for a in result.T])
         return result.T
     else:
         return result + t
