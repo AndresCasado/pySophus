@@ -6,7 +6,7 @@ Created on Mar 2, 2016
 from __future__ import division
 import numpy as np
 
-
+# TODO rethink this method
 def specialDotMap(matrix, point_or_points):
     """Special matrix multiplication method used with transformation matrices (Rotation*point + translation) and points
     using function mapping to save some memory
@@ -20,11 +20,7 @@ def specialDotMap(matrix, point_or_points):
     t = matrix[0:dim, dim]
 
     result = R.dot(point_or_points)
-    if point_or_points.ndim == 2:
-        result = np.array([a + t for a in result.T])
-        return result.T
-    else:
-        return result + t
+    return result.T + t
 
 
 def specialDotMatrix(matrix, point_or_points):
