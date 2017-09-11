@@ -53,9 +53,10 @@ class Algebra(object):
         :rtype: algebra
         """
         if type(other) == type(self):
-            return type(self)(vector=self.vector() + other.vector())
+            return (other.exp()*self.exp()).log()
         elif type(other) == np.ndarray:
-            return type(self)(vector=self.vector() + other)
+            other = type(self)(vector=other)
+            return (other.exp()*self.exp()).log()
         else:
             raise TypeError("unsupported operand type(s) for +: '" + str(self.__class__) + "' and '" + str(other.__class__) + "'")
 
@@ -90,6 +91,9 @@ class Algebra(object):
     def vector(self):
         raise NotImplementedError()
 
+    def exp(self):
+        raise NotImplementedError()
+
 
 class Group(object):
     def __init__(self, matrix):
@@ -101,6 +105,12 @@ class Group(object):
     def __neg__(self):
         return type(self)(np.linalg.inv(self.M))
 
+    def __mul__(self, other):
+        raise NotImplementedError()
+
+    def matrix(self):
+        raise NotImplementedError()
+
 
 class RotationGroup(Group):
     def __mul__(self, other):
@@ -111,11 +121,11 @@ class RotationGroup(Group):
         :rtype: group
         """
         if type(other) == type(self):
-            return type(self)(matrix=self.M.dot(other.matrix()))
+            return type(self)(matrix=other.M.dot(self.matrix()))
         elif type(other) == np.ndarray:
             return self.M.dot(other)
         else:
-            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for *: '" + str(type(self)) + "' and '" + str(type(other)) + "'")
 
 
 class TransformationGroup(Group):
@@ -127,11 +137,11 @@ class TransformationGroup(Group):
         :rtype: group
         """
         if type(other) == type(self):
-            return type(self)(self.M.dot(other.matrix()))
+            return type(self)(matrix=other.M.dot(self.matrix()))
         elif type(other) == np.ndarray:
             return specialDotMatrix(self.M, other)
         else:
-            raise TypeError("unsupported operand type(s) for *: '" + self.__class__ + "' and '" + other.__class__ + "'")
+            raise TypeError("unsupported operand type(s) for *: '" + str(type(self)) + "' and '" + str(type(other)) + "'")
 
 
 class SO2(RotationGroup):
