@@ -315,7 +315,6 @@ class se2(Algebra):
         T = np.eye(3, 3)
         T[0:2, 0:2] = R
 
-        # TODO Donde esta definido?
         V = 1 / theta * np.matrix([[sn, -(1 - cs)],
                                    [1 - cs, sn]]) if theta != 0 else np.eye(2)
         tmp = V.dot(t)
@@ -337,7 +336,7 @@ class se2(Algebra):
         return self.w
 
     def generators(self):
-        return np.array([self.G1, self.G2, self.G3])
+        return [self.G1, self.G2, self.G3]
 
 
 class SO3(RotationGroup):
@@ -443,7 +442,7 @@ class so3(Algebra):
         return so3.G1 * self.w[0] + so3.G2 * self.w[1] + so3.G3 * self.w[2]
 
     def generators(self):
-        return np.array([self.G1, self.G2, self.G3])
+        return [self.G1, self.G2, self.G3]
 
 
 class SE3(TransformationGroup):
@@ -568,36 +567,4 @@ class se3(Algebra):
         return SE3(T)
 
     def generators(self):
-        return np.array([self.G1, self.G2, self.G3, self.G4, self.G5, self.G6])
-
-    def oldV(self):
-        # TODO outdated?
-        w = so3(self.w[3:5, 0])
-        wx = w.matrix()
-        theta = w.magnitude()
-        cs = np.cos(theta)
-        sn = np.sin(theta)
-        I3 = np.eye(3, 3)
-        V = I3 + (1 - cs) / theta ** 2 * wx + (theta - sn) / theta ** 3 * wx * wx
-        return V
-
-    def oldExp(self):
-        # TODO outdated?
-        t = self.w[0:2, 0]
-        w = so3(self.w[3:5, 0])
-        V = self.V()
-        Vt = V * t
-        T = np.eye(4, 4)
-        T[0:2, 0:2] = w.exp()
-        T[0:2, 3] = Vt
-        return SE3(T)
-
-    def oldX(self):
-        # TODO outdated?
-        t = self.w[0:2, 0]
-        w = so3(self.w[3:5, 0])
-        wx = w.matrix()
-        A = np.zeros(4, 4)
-        A[0:2, 0:2] = wx
-        A[0:2, 3] = t
-        return A
+        return [self.G1, self.G2, self.G3, self.G4, self.G5, self.G6]
